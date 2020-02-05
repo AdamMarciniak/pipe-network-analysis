@@ -1,9 +1,99 @@
 
+html, body, #root, .App {
+  height: 100vh;
+  width: 100vw;
+}
+
+.App {
+  display: grid;
+  grid-template-rows: 70px 1fr;
+  grid-template-columns: 1fr 300px;
+  grid-template-areas: 
+    "toolbar toolbar"
+    "workspace infoPanel";
+}
+
+.toolbar {
+  grid-area: toolbar;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  background: linear-gradient(180deg, #7D7D7D 80.99%, #676767 100%);
+}
+
+.toolbarButton {
+  font-size: 30px;
+  color: #4A4A4A;
+  width: 45px;
+  height: 45px;
+  margin-left: 20px;
+  border-radius: 40px;
+  border: none;
+  outline: none;
+  background: #8B8B8B;
+  box-shadow: -1px -1px 4px rgba(239, 239, 239, 0.61), 2px 2px 5px rgba(89, 89, 89, 0.79);
+}
+
+.toolbarButton svg {
+  width:50%;
+  height:50%;
+  margin-left: 5px;
+}
+
+.toolbarButton:active {
+  background: #7A7A7A;
+box-shadow: inset 0px 4px 4px rgba(0, 0, 0, 0.25), inset -2px -2px 4px rgba(255, 255, 255, 0.13);
+}
+
+.workspace {
+  position: relative;
+  grid-area: workspace;
+  overflow: hidden;
+  background-color: #929292;
+    background-image:linear-gradient(#8b8b8b, #7a7a7a);
+    background-image:
+    linear-gradient(0deg, transparent 24%,
+    rgba(255, 255, 255, .05) 25%,
+    rgba(255, 255, 255, .05) 26%,
+      transparent 27%, transparent 74%,
+    rgba(255, 255, 255, .05) 75%,
+    rgba(255, 255, 255, .05) 76%,
+      transparent 77%, transparent),
+    linear-gradient(90deg, transparent 24%,
+    rgba(255, 255, 255, .05) 25%,
+    rgba(255, 255, 255, .05) 26%,
+      transparent 27%, transparent 74%,
+    rgba(255, 255, 255, .05) 75%,
+    rgba(255, 255, 255, .05) 76%,
+      transparent 77%, transparent);
+    height:100%;
+    width:100%;
+    background-size:40px 40px;
+    background-position: -10px -10px;
+    z-index: 0;
+}
+
+.gridLines {
+  grid-area: workspace;
+
+}
+
+.infoPanel {
+  grid-area: infoPanel;
+  background: #CDCDCD;
+  overflow-y:scroll;
+}
+
+.pipeList {
+  list-style-type: none;
+}
+
+
 svg {
-  position: absolute;
+  position: relative;
   top: 0;
   left: 0;
-  z-index: -1;
+  z-index: 1;
   height:100%;
   width:100%;
 }
@@ -22,6 +112,8 @@ svg {
   background: black;
   border-radius: 20px;
   z-index: 2;
+  color: white;
+  user-select: none;
 }
 
 .pipe {
