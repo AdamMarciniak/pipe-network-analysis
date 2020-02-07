@@ -153,6 +153,9 @@ function App() {
       </div>
 
       <div className="infoPanel">
+        <div>
+          Pipe ID and Endpoints
+        </div>
         <ul>
           {pipes.sort(function (a, b) {
             return a.id - b.id
@@ -160,6 +163,9 @@ function App() {
             return <PipeRow pipe={pipe} key={pipe.id} id={pipe.id} />
           })}
         </ul>
+        <div>
+          Connections
+        </div>
         <ul>
           {connections.sort(function (a, b) {
             return a.ids[0] - b.ids[0]
