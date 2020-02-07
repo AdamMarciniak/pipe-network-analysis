@@ -74,10 +74,9 @@ const Pipe = (props) => {
 
 function App() {
 
-  const [pipes, setPipes] = useState([{ id: 0, x1: null, y1: null, x2: null, y2: null }])
+  const [pipes, setPipes] = useState([{ id: 0, x1: null, y1: null, x2: null, y2: null, node1: 0, node2: 1 }])
 
   const [connections, setConnections] = useState([]);
-
 
 
   const addPipe = () => {
@@ -88,7 +87,17 @@ function App() {
         return 0;
       }
     };
-    setPipes([...pipes, { id: getNewId(), x1: null, y1: null, x2: null, y2: null }])
+    const maxNode = 0;
+    pipes.forEach((pipe) => {
+      if (pipe.node1 > maxNode) {
+        maxNode = pipe.node1;
+      }
+      if (pipe.node2 > maxNode) {
+        maxNode = pipe.node2;
+      }
+    })
+
+    setPipes([...pipes, { id: getNewId(), x1: null, y1: null, x2: null, y2: null, node1: maxNode + 1, node2: maxNode + 2 }])
   };
 
   const changePipe = (id, pivots) => {
@@ -127,11 +136,9 @@ function App() {
     setConnections(connections);
     console.log('connections', JSON.stringify(connections));
 
+    console.log(pipes);
 
   }, [pipes])
-
-
-
 
 
   return (
