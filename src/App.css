@@ -121,3 +121,19 @@ svg {
   height:100%;
   width: 100%;
 }
+
+.group {
+  position:absolute;
+  height: 40px;
+  width: 40px;
+  z-index: 1;
+  background: white;
+  border-radius: 40px;
+}
+
+polygon {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  fill: #ff656583
+}
