@@ -1,7 +1,17 @@
-const { transpose, multiply, subtract, add, inv } = require('mathjs')
+const {
+  transpose,
+  multiply,
+  subtract,
+  add,
+  inv,
+  zeros,
+  size,
+  subset,
+  index,
+} = require('mathjs')
 
 // prettier-ignore
-const data = [
+const data1 = [
   {
     pipe: 0,
     node1: 0,
@@ -11,6 +21,7 @@ const data = [
     length: 2,
     dia: 0.1,
     flow: null,
+    demand: 0,
   },
   {
     pipe: 1,
@@ -21,6 +32,7 @@ const data = [
     length: 2,
     dia: 0.1,
     flow: null,
+    demand: 0,
   },
   {
     pipe: 2,
@@ -31,6 +43,7 @@ const data = [
     length: 2,
     dia: 0.1,
     flow: null,
+    demand: 0,
   },
   {
     pipe: 3,
@@ -41,6 +54,7 @@ const data = [
     length: 2,
     dia: 0.1,
     flow: null,
+    demand: 0,
   },
   {
     pipe: 4,
@@ -51,6 +65,7 @@ const data = [
     length: 2,
     dia: 0.1,
     flow: null,
+    demand: 0,
   },
   {
     pipe: 5,
@@ -61,6 +76,7 @@ const data = [
     length: 2,
     dia: 0.1,
     flow: null,
+    demand: 0,
   },
   {
     pipe: 6,
@@ -71,6 +87,34 @@ const data = [
     length: 2,
     dia: 0.1,
     flow: null,
+    demand: 0,
+  },
+]
+
+const data = [
+  {
+    pipe: 0,
+    node1: 0,
+    node2: 1,
+    elev1: 80,
+    elev2: null,
+    length: 1,
+    dia: 0.3,
+    flow: null,
+    demand1: null,
+    demand2: 0.05,
+  },
+  {
+    pipe: 1,
+    node1: 1,
+    node2: 2,
+    elev1: null,
+    elev2: 50,
+    length: 1,
+    dia: 0.3,
+    flow: null,
+    demand1: 0.05,
+    demand2: null,
   },
 ]
 
@@ -166,11 +210,16 @@ const getVelocity = (flow, dia) => {
 }
 
 const getFrictionFactor = (vel, dia) => {
-  const reynolds = getReynolds(vel, dia)
-  if (reynolds < 2000) {
-    return 64 / reynolds
-  }
-  return 64 / reynolds
+  //Bellos, Nalbantis, Tsakiris friction factor
+  const Re = getReynolds(vel, dia)
+  const e = 0.01
+
+  const a = 1 / (1 + Math.pow(Re / 2712, 8.4))
+  const b = 1 / (1 + Math.pow(Re / ((150 * dia) / e), 1.8))
+  const f =
+    Math.pow(64 / Re, a) *
+    Math.pow(0.75 * Math.log(Re / 5.37), 2 * b * (a - 1)) *
+    Math.pow(0.88 * Math.log((6.82 * dia) / e), 2 * (a - 1) * (1 - b))
 }
 
 const getResistanceFactor = (flow, dia, length) => {
@@ -211,14 +260,38 @@ const setResistance = data => {
 const getRes = data => {
   const res = []
   for (let i = 0; i < data.length; i += 1) {
-    res.push(data[i].res)
+    //res.push(data[i].res)
+    res.push(746.95)
   }
+
   return res
 }
 
 const getLargestChange = (oldMatrix, newMatrix) => {
   const changes = subtract(oldMatrix, newMatrix).map(flow => Math.abs(flow))
-  return Math.max(...changes)
+  console.log(subset(changes, index(0)))
+  return size(changes) > 1 ? Math.max(...changes) : subset(changes, index(0))
+}
+
+const getDemands = data => {
+  const nonFixedNodes = getNonFixedNodes(data)
+  const visitedNodes = []
+  const demands = []
+  data.forEach(pipe => {
+    nonFixedNodes.forEach(node => {
+      if (node === pipe.node1 && !visitedNodes.includes(node)) {
+        visitedNodes.push(node)
+        demands.push(pipe.demand1)
+      }
+
+      if (node === pipe.node2 && !visitedNodes.includes(node)) {
+        visitedNodes.push(node)
+        demands.push(pipe.demand2)
+      }
+    })
+  })
+  console.table(demands)
+  return demands
 }
 
 // TODO
@@ -231,7 +304,7 @@ const runSolver = (data, maxTolerance) => {
   const A2 = getA(data, getFixedNodes(data))
   const elev = getElevation(data)
   const Q = getInitialFlows(data)
-  const dem = [0, 0, 0, 0]
+  const demands = getDemands(data)
 
   const solveQandH = Q => {
     setFlows(data, Q)
@@ -249,7 +322,7 @@ const runSolver = (data, maxTolerance) => {
       multiply(multiply(G, A2), elev),
     )
     const thirdTerm = multiply(A1T, lastTerm)
-    const rightTerm = add(multiply(-n, dem), thirdTerm)
+    const rightTerm = add(multiply(-n, demands), thirdTerm)
     const H = multiply(inv(term1), rightTerm)
 
     // Solve for Qnew
@@ -260,7 +333,8 @@ const runSolver = (data, maxTolerance) => {
   }
 
   let Q2 = Q
-  let H2 = [0, 0, 0, 0]
+
+  let H2 = zeros(getNonFixedNodes(data).length)
 
   let change = Infinity
   let iters = 0
@@ -279,5 +353,7 @@ const runSolver = (data, maxTolerance) => {
 
 const [Q1, H1] = runSolver(data, 0.00001)
 
-console.table(Q1)
-console.table(H1)
+console.log('FLOWS (m^3/s)')
+console.table(Q1.map(vals => Number(vals.toFixed(3))))
+console.log('HEADS (m)')
+console.table(H1.map(vals => Number(vals.toFixed(3))))

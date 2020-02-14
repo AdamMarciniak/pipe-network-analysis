@@ -131,3 +131,7 @@ const getGraph = pipes => {
 }
 
 console.log(getGraph(pipes))
+
+// O((1 + 1)(3 + 3))= O(12)
+// O((2)(16)) = O(32)  increased O X 3
+// O((13)(5 + 8)) = O(65) increase O X 169
