@@ -163,7 +163,7 @@ describe('addNode', () => {
     })
   })
 
-  test('throws error if node already in initialGraph', () => {
+  test('returns initial graph if node already in initialGraph', () => {
     const initialGraph = {
       nodes: {
         '0,1': {},
@@ -175,7 +175,7 @@ describe('addNode', () => {
     const node = [1, 2]
     const nodeAttributes = {}
 
-    expect(() => addNode(initialGraph, node, nodeAttributes)).toThrow()
+    expect(addNode(initialGraph, node, nodeAttributes)).toEqual(initialGraph)
   })
 })
 
@@ -451,35 +451,35 @@ describe('dragNode', () => {
     const graph = {
       nodes: {
         '0,1': { fixed: true },
-        '1,2': { fixed: false },
+        '300,320': { fixed: false },
         '1,3': { fixed: false },
         '2,3': { fixed: true },
       },
       pipes: {
         '0,1,1,3': {},
-        '0,1,1,2': {},
-        '1,2,1,3': {},
-        '2,3,1,2': {},
+        '0,1,300,320': {},
+        '300,320,1,3': {},
+        '2,3,300,320': {},
       },
     }
 
     const newGraph = {
       nodes: {
         '0,1': { fixed: true },
-        '4,5': { fixed: false },
+        '300,330': { fixed: false },
         '1,3': { fixed: false },
         '2,3': { fixed: true },
       },
       pipes: {
         '0,1,1,3': {},
-        '0,1,4,5': {},
-        '4,5,1,3': {},
-        '2,3,4,5': {},
+        '0,1,300,330': {},
+        '300,330,1,3': {},
+        '2,3,300,330': {},
       },
     }
 
-    const oldCoord = '1,2'
-    const newCoord = '4,5'
+    const oldCoord = '300,320'
+    const newCoord = '300,330'
 
     expect(dragNode(graph, oldCoord, newCoord)).toEqual(newGraph)
   })

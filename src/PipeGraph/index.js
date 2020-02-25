@@ -37,7 +37,7 @@ export const addNode = (initialGraph, coords, nodeAttributes) => {
   const nodeKey = coordsToKey(coords)
   const initialNodes = Object.keys(initialGraph.nodes)
   if (initialNodes.includes(nodeKey)) {
-    throw new Error(`Initial graph already contains this node: ${nodeKey}`)
+    return initialGraph
   }
 
   return {
@@ -56,8 +56,9 @@ export const getNodeMatrix = (graph, fixed) => {
     node => allNodes[node].fixed === fixed,
   )
   Object.keys(graph.pipes).forEach(pipe => {
-    const pipeStartNode = pipe.substring(0, 3)
-    const pipeEndNode = pipe.substring(4)
+    const pipeIdList = pipe.split(',')
+    const pipeStartNode = `${pipeIdList[0]},${pipeIdList[1]}`
+    const pipeEndNode = `${pipeIdList[2]},${pipeIdList[3]}`
     const matrixRow = []
 
     filteredNodes.forEach(node => {
@@ -121,11 +122,12 @@ export const dragNode = (graph, oldNode, newNode) => {
   Object.keys(oldPipes).forEach(oldPipeId => {
     let newPipeId = oldPipeId
     let oldPipeAttributes = graph.pipes[oldPipeId]
-
-    if (oldPipeId.substring(0, 3) === oldNode) {
-      newPipeId = `${newNode},${oldPipeId.substring(4)}`
-    } else if (oldPipeId.substring(4) === oldNode) {
-      newPipeId = `${oldPipeId.substring(0, 3)},${newNode}`
+    const oldPipeStart = `${oldPipeId.split(',')[0]},${oldPipeId.split(',')[1]}`
+    const oldPipeEnd = `${oldPipeId.split(',')[2]},${oldPipeId.split(',')[3]}`
+    if (oldPipeStart === oldNode) {
+      newPipeId = `${newNode},${oldPipeEnd}`
+    } else if (oldPipeEnd === oldNode) {
+      newPipeId = `${oldPipeStart},${newNode}`
     }
     newPipes[newPipeId] = oldPipeAttributes
   })

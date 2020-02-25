@@ -1,11 +1,11 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react'
 import './App.css'
 import Draggable from 'react-draggable'
-import { addPipe, addNode, dragNode } from './PipeGraph/index'
+import { addPipe, addNode, dragNode, getNodeMatrix } from './PipeGraph/index'
 
 const Node = props => {
-  const handleDrag = e => {
-    props.dragNode(e, props.id)
+  const handleDrag = (e, data) => {
+    props.dragNode(e, data, props.id)
   }
   const x = props.coord.split(',')[0] - 10
   const y = props.coord.split(',')[1] - 10
@@ -17,7 +17,7 @@ const Node = props => {
           y: y,
         }}
         grid={[20, 20]}
-        onDrag={handleDrag}
+        onDrag={(e, data) => handleDrag(e, data)}
       >
         <div
           className="pivot"
@@ -66,39 +66,48 @@ function App() {
         key.slice(','),
       )
       if (!currentCoordinates.includes([x, y])) {
-        setGraph(addNode(graph, [x, y], {}))
+        setGraph(
+          addNode(graph, [x, y], { id: `${Math.random()}`, fixed: false }),
+        )
       }
     }
   }
 
-  const handleDragNode = (e, oldId) => {
-    const rect = workspaceRef.current.getBoundingClientRect()
-    const left = rect.left
-    const top = rect.top
-    const x = round(e.clientX - left, 20)
-    const y = round(e.clientY - top, 20)
+  // TO DO. Need to figure out how to get nodes to drag and pipes to drag with them.
+  // The way it's done currently deletes the node and puts  new one in it's place when dragging
+  // This oesn't work because the drag event was on the original node.
+  // Maybe implement a node ID attribute in the graph.
+  // That way, the node itself will stay just the coordinates will change.
+  // Node ID is no longer the coordinates of the node.
+  // May need to modify functions to be ok with ID attribute for each node.
+
+  const handleDragNode = (e, data, oldId) => {
+    const x = data.x + 10
+    const y = data.y + 10
     const newId = `${x},${y}`
-    console.log(oldId, newId)
+    console.log('DRAG', oldId, newId)
+    console.log('newGraph', dragNode(graph, oldId, newId))
     setGraph(dragNode(graph, oldId, newId))
   }
 
   useEffect(() => {
-    console.log(graph)
+    console.log(getNodeMatrix(graph, false))
   }, [graph])
 
   const handlePipe = (e, id) => {
-    console.log(id.split(',').map(coord => Number(coord)))
-    if (!pipeInProgress) {
-      setPipeInProgress([true, id])
-    } else {
-      const newGraph = addPipe(
-        graph,
-        {},
-        pipeInProgress[1].split(',').map(coord => Number(coord)),
-        id.split(',').map(coord => Number(coord)),
-      )
-      setGraph(newGraph)
-      setPipeInProgress(false)
+    if (e.altKey) {
+      if (!pipeInProgress) {
+        setPipeInProgress([true, id])
+      } else {
+        const newGraph = addPipe(
+          graph,
+          { id: Math.random() },
+          pipeInProgress[1].split(',').map(coord => Number(coord)),
+          id.split(',').map(coord => Number(coord)),
+        )
+        setGraph(newGraph)
+        setPipeInProgress(false)
+      }
     }
   }
 
@@ -123,7 +132,7 @@ function App() {
               dragNode={handleDragNode}
               handlePipe={handlePipe}
               coord={coord}
-              key={coord}
+              key={graph.nodes[coord].id}
               id={coord}
             ></Node>
           )
