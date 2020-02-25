@@ -1,39 +1,48 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react'
 import './App.css'
 import Draggable from 'react-draggable'
+import { addPipe, addNode, dragNode } from './PipeGraph/index'
 
 const Node = props => {
-  const [positionHistory, setPositionHistory] = useState([
-    props.x - 10,
-    props.y - 10,
-  ])
-
-  const [draggableDisabled, setDraggableDisabled] = useState(false)
-
-  const handleDrag = (e, data) => {
-    console.log(data)
-    props.setNodes(
-      props.nodes.map(node =>
-        node.id === props.id
-          ? { id: props.id, x: e.x - 10, y: e.y - 10 }
-          : node,
-      ),
-    )
+  const handleDrag = e => {
+    props.dragNode(e, props.id)
   }
-
+  const x = props.coord.split(',')[0] - 10
+  const y = props.coord.split(',')[1] - 10
   return (
     <div>
       <Draggable
         defaultPosition={{
-          x: props.x - 10,
-          y: props.y - 10,
+          x: x,
+          y: y,
         }}
         grid={[20, 20]}
-        onStop={handleDrag}
+        onDrag={handleDrag}
       >
-        <div className="pivot" onClick={e => e.stopPropagation()}></div>
+        <div
+          className="pivot"
+          onClick={e => props.handlePipe(e, props.id)}
+        ></div>
       </Draggable>
     </div>
+  )
+}
+
+const Pipe = props => {
+  const coords = props.coord.split(',')
+  const x1 = coords[0]
+  const y1 = coords[1]
+  const x2 = coords[2]
+  const y2 = coords[3]
+
+  return (
+    <line
+      x1={x1}
+      y1={y1}
+      x2={x2}
+      y2={y2}
+      style={{ stroke: 'rgb(255,0,0)', strokeWidth: '2px' }}
+    />
   )
 }
 
@@ -42,32 +51,56 @@ function round(number, increment) {
 }
 
 function App() {
-  const [nodes, setNodes] = useState([])
   const workspaceRef = useRef()
+  const [graph, setGraph] = useState({ nodes: {}, pipes: {} })
+  const [pipeInProgress, setPipeInProgress] = useState(false)
 
-  const getNewNodeId = () => {
-    const allIds = nodes.map(node => node.id)
-    const maxId = Math.max(...allIds)
-    return maxId !== -Infinity ? maxId + 1 : 0
-  }
-
-  const addNode = e => {
+  const handleAddNode = e => {
     if (e.shiftKey) {
       const rect = workspaceRef.current.getBoundingClientRect()
       const left = rect.left
       const top = rect.top
       const x = round(e.clientX - left, 20)
       const y = round(e.clientY - top, 20)
-      const currentCoordinates = nodes.map(node => [node.x, node.y])
+      const currentCoordinates = Object.keys(graph.nodes).map(key =>
+        key.slice(','),
+      )
       if (!currentCoordinates.includes([x, y])) {
-        setNodes([...nodes, { id: getNewNodeId(), x: x, y: y }])
+        setGraph(addNode(graph, [x, y], {}))
       }
     }
   }
 
+  const handleDragNode = (e, oldId) => {
+    const rect = workspaceRef.current.getBoundingClientRect()
+    const left = rect.left
+    const top = rect.top
+    const x = round(e.clientX - left, 20)
+    const y = round(e.clientY - top, 20)
+    const newId = `${x},${y}`
+    console.log(oldId, newId)
+    setGraph(dragNode(graph, oldId, newId))
+  }
+
   useEffect(() => {
-    console.log(nodes)
-  }, [nodes])
+    console.log(graph)
+  }, [graph])
+
+  const handlePipe = (e, id) => {
+    console.log(id.split(',').map(coord => Number(coord)))
+    if (!pipeInProgress) {
+      setPipeInProgress([true, id])
+    } else {
+      const newGraph = addPipe(
+        graph,
+        {},
+        pipeInProgress[1].split(',').map(coord => Number(coord)),
+        id.split(',').map(coord => Number(coord)),
+      )
+      setGraph(newGraph)
+      setPipeInProgress(false)
+    }
+  }
 
   return (
     <div className="App">
@@ -83,18 +116,23 @@ function App() {
         </button>
       </div>
 
-      <div className="workspace" ref={workspaceRef} onClick={addNode}>
-        {nodes.map(node => {
+      <div className="workspace" ref={workspaceRef} onClick={handleAddNode}>
+        {Object.keys(graph.nodes).map(coord => {
           return (
             <Node
-              x={node.x}
-              y={node.y}
-              id={node.id}
-              nodes={nodes}
-              setNodes={setNodes}
+              dragNode={handleDragNode}
+              handlePipe={handlePipe}
+              coord={coord}
+              key={coord}
+              id={coord}
             ></Node>
           )
         })}
+        <svg height="210" width="500">
+          {Object.keys(graph.pipes).map(coord => {
+            return <Pipe coord={coord} key={coord} id={coord}></Pipe>
+          })}
+        </svg>
         <div className="gridLines" />
       </div>
 
