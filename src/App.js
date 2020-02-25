@@ -41,7 +41,8 @@ const Pipe = props => {
       y1={y1}
       x2={x2}
       y2={y2}
-      style={{ stroke: 'rgb(255,0,0)', strokeWidth: '2px' }}
+      onClick={e => props.onClickPipe(props.id)}
+      style={{ stroke: 'rgb(255,0,0)', strokeWidth: '10px' }}
     />
   )
 }
@@ -50,10 +51,24 @@ function round(number, increment) {
   return Math.round(number / increment) * increment
 }
 
+const InfoPanel = props => {
+  if (props.showInfo.id) {
+    return (
+      <div>
+        <div>{props.showInfo.type}</div>
+        <div>{props.showInfo.id}</div>
+      </div>
+    )
+  } else {
+    return null
+  }
+}
+
 function App() {
   const workspaceRef = useRef()
   const [graph, setGraph] = useState({ nodes: {}, pipes: {} })
   const [pipeInProgress, setPipeInProgress] = useState(false)
+  const [showInfo, setShowInfo] = useState({ type: null, id: null })
 
   const handleAddNode = e => {
     if (e.shiftKey) {
@@ -108,7 +123,13 @@ function App() {
         setGraph(newGraph)
         setPipeInProgress(false)
       }
+    } else {
+      setShowInfo({ type: 'node', id: id })
     }
+  }
+
+  const onClickPipe = id => {
+    setShowInfo({ type: 'pipe', id: id })
   }
 
   return (
@@ -139,13 +160,22 @@ function App() {
         })}
         <svg height="210" width="500">
           {Object.keys(graph.pipes).map(coord => {
-            return <Pipe coord={coord} key={coord} id={coord}></Pipe>
+            return (
+              <Pipe
+                coord={coord}
+                key={coord}
+                id={coord}
+                onClickPipe={onClickPipe}
+              ></Pipe>
+            )
           })}
         </svg>
         <div className="gridLines" />
       </div>
 
-      <div className="infoPanel"></div>
+      <div className="infoPanel">
+        <InfoPanel showInfo={showInfo}></InfoPanel>
+      </div>
     </div>
   )
 }
