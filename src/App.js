@@ -1,7 +1,14 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react'
 import './App.css'
 import Draggable from 'react-draggable'
-import { addPipe, addNode, dragNode, getNodeMatrix } from './PipeGraph/index'
+import {
+  addPipe,
+  addNode,
+  dragNode,
+  getNodeMatrix,
+  changePipe,
+  changeNode,
+} from './PipeGraph/index'
 
 const Node = props => {
   const handleDrag = (e, data) => {
@@ -42,7 +49,7 @@ const Pipe = props => {
       x2={x2}
       y2={y2}
       onClick={e => props.onClickPipe(props.id)}
-      style={{ stroke: 'rgb(255,0,0)', strokeWidth: '10px' }}
+      style={{ stroke: '#4A4A4A', strokeWidth: '10px' }}
     />
   )
 }
@@ -51,14 +58,96 @@ function round(number, increment) {
   return Math.round(number / increment) * increment
 }
 
+const PipeInfo = props => {
+  const [length, setLength] = useState(props.pipe.length)
+  const [diameter, setDiameter] = useState(props.pipe.diameter)
+  const [roughness, setRoughness] = useState(props.pipe.roughness)
+  console.log('PIPE', props.pipe)
+  const handleSubmitLength = () => {
+    const value = Number(length)
+    if (!isNaN(value)) {
+      const newAttributes = { ...props.pipe, length: value }
+      props.handleChangePipe(props.pipe.id, newAttributes)
+    }
+  }
+
+  const handleSubmitDiameter = () => {
+    const value = Number(diameter)
+    if (!isNaN(value)) {
+      const newAttributes = { ...props.pipe, diameter: value }
+      props.handleChangePipe(props.pipe.id, newAttributes)
+    }
+  }
+
+  const handleSubmitRoughness = () => {
+    const value = Number(roughness)
+    if (!isNaN(value)) {
+      const newAttributes = { ...props.pipe, roughness: value }
+      props.handleChangePipe(props.pipe.id, newAttributes)
+    }
+  }
+
+  const handleSetLength = e => {
+    const value = e.target.value
+    setLength(value)
+  }
+
+  const handleSetDiameter = e => {
+    const value = e.target.value
+    setDiameter(value)
+  }
+
+  const handleSetRoughness = e => {
+    const value = e.target.value
+    setRoughness(value)
+  }
+
+  return (
+    <div>
+      <h2>{`Pipe Id: ${props.pipe.id}`}</h2>
+      <label>
+        Length:
+        <input type="text" value={length} onChange={handleSetLength} />
+        <button onClick={handleSubmitLength}>Submit</button>
+      </label>
+      <label>
+        Diameter:
+        <input type="text" value={diameter} onChange={handleSetDiameter} />
+        <button onClick={handleSubmitDiameter}>Submit</button>
+      </label>
+      <label>
+        Roughness:
+        <input type="text" value={roughness} onChange={handleSetRoughness} />
+        <button onClick={handleSubmitRoughness}>Submit</button>
+      </label>
+    </div>
+  )
+}
+
+const NodeInfo = props => {
+  return (
+    <div>
+      <div>NODE</div>
+      <div>{props.node.fixed ? 'FIXED' : 'NON-FIXED'}</div>
+      <div>{props.node.elevation}</div>
+    </div>
+  )
+}
+
 const InfoPanel = props => {
-  if (props.showInfo.id) {
+  const pipe = props.graph.pipes[props.showInfo.id]
+  const node = props.graph.nodes[props.showInfo.id]
+
+  if (pipe) {
     return (
-      <div>
-        <div>{props.showInfo.type}</div>
-        <div>{props.showInfo.id}</div>
-      </div>
+      <PipeInfo
+        key={pipe.id}
+        pipe={pipe}
+        handleChangePipe={props.handleChangePipe}
+      ></PipeInfo>
     )
+  } else if (node) {
+    return <NodeInfo node={node}></NodeInfo>
   } else {
     return null
   }
@@ -69,6 +158,14 @@ function App() {
   const [graph, setGraph] = useState({ nodes: {}, pipes: {} })
   const [pipeInProgress, setPipeInProgress] = useState(false)
   const [showInfo, setShowInfo] = useState({ type: null, id: null })
+
+  const handleChangePipe = (pipeId, attributes) => {
+    const pipeKey = Object.keys(graph.pipes).filter(
+      key => graph.pipes[key].id === pipeId,
+    )[0]
+    console.log(Object.keys(graph.pipes), pipeId)
+    setGraph(changePipe(graph, pipeKey, attributes))
+  }
 
   const handleAddNode = e => {
     if (e.shiftKey) {
@@ -82,19 +179,15 @@ function App() {
       )
       if (!currentCoordinates.includes([x, y])) {
         setGraph(
-          addNode(graph, [x, y], { id: `${Math.random()}`, fixed: false }),
+          addNode(graph, [x, y], {
+            id: `${Math.random()}`,
+            fixed: false,
+            elevation: 0,
+          }),
         )
       }
     }
   }
-
-  // TO DO. Need to figure out how to get nodes to drag and pipes to drag with them.
-  // The way it's done currently deletes the node and puts  new one in it's place when dragging
-  // This oesn't work because the drag event was on the original node.
-  // Maybe implement a node ID attribute in the graph.
-  // That way, the node itself will stay just the coordinates will change.
-  // Node ID is no longer the coordinates of the node.
-  // May need to modify functions to be ok with ID attribute for each node.
 
   const handleDragNode = (e, data, oldId) => {
     const x = data.x + 10
@@ -107,6 +200,7 @@ function App() {
 
   useEffect(() => {
     console.log(getNodeMatrix(graph, false))
+    console.log(graph)
   }, [graph])
 
   const handlePipe = (e, id) => {
@@ -116,7 +210,7 @@ function App() {
       } else {
         const newGraph = addPipe(
           graph,
-          { id: Math.random() },
+          { id: Math.random(), length: 1, diameter: 1, roughness: 0.01 },
           pipeInProgress[1].split(',').map(coord => Number(coord)),
           id.split(',').map(coord => Number(coord)),
         )
@@ -174,7 +268,12 @@ function App() {
       </div>
 
       <div className="infoPanel">
-        <InfoPanel showInfo={showInfo}></InfoPanel>
+        <InfoPanel
+          handleChangePipe={handleChangePipe}
+          showInfo={showInfo}
+          graph={graph}
+          setGraph={setGraph}
+        ></InfoPanel>
       </div>
     </div>
   )
