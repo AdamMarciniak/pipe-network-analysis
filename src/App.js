@@ -125,11 +125,29 @@ const PipeInfo = props => {
 }
 
 const NodeInfo = props => {
+  const [elevation, setElevation] = useState(props.node.elevation)
+
+  const handleSetElevation = e => {
+    const value = e.target.value
+    setElevation(value)
+  }
+
+  const handleSubmitElevation = () => {
+    const value = Number(elevation)
+    if (!isNaN(value)) {
+      const newAttributes = { ...props.node, elevation: value }
+      props.handleChangeNode(props.node.id, newAttributes)
+    }
+  }
+
   return (
     <div>
-      <div>NODE</div>
-      <div>{props.node.fixed ? 'FIXED' : 'NON-FIXED'}</div>
-      <div>{props.node.elevation}</div>
+      <h2>{`Node Id: ${props.node.id}`}</h2>
+      <label>
+        Elevation:
+        <input type="text" value={elevation} onChange={handleSetElevation} />
+        <button onClick={handleSubmitElevation}>Submit</button>
+      </label>
     </div>
   )
 }
@@ -147,7 +165,13 @@ const InfoPanel = props => {
       ></PipeInfo>
     )
   } else if (node) {
-    return <NodeInfo node={node}></NodeInfo>
+    return (
+      <NodeInfo
+        node={node}
+        key={node.id}
+        handleChangeNode={props.handleChangeNode}
+      ></NodeInfo>
+    )
   } else {
     return null
   }
@@ -165,6 +189,14 @@ function App() {
     )[0]
     console.log(Object.keys(graph.pipes), pipeId)
     setGraph(changePipe(graph, pipeKey, attributes))
+  }
+
+  const handleChangeNode = (nodeId, attributes) => {
+    const nodeKey = Object.keys(graph.nodes).filter(
+      key => graph.nodes[key].id === nodeId,
+    )[0]
+    console.log(Object.keys(graph.nodes), nodeId)
+    setGraph(changeNode(graph, nodeKey, attributes))
   }
 
   const handleAddNode = e => {
@@ -270,6 +302,7 @@ function App() {
       <div className="infoPanel">
         <InfoPanel
           handleChangePipe={handleChangePipe}
+          handleChangeNode={handleChangeNode}
           showInfo={showInfo}
           graph={graph}
           setGraph={setGraph}
