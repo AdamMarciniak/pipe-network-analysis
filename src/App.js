@@ -10,6 +10,8 @@ import {
   changeNode,
 } from './PipeGraph/index'
 
+import { runSimulation } from './Simulation/index'
+
 const Node = props => {
   const handleDrag = (e, data) => {
     props.dragNode(e, data, props.id)

@@ -1,3 +1,15 @@
+const {
+  transpose,
+  multiply,
+  subtract,
+  add,
+  inv,
+  zeros,
+  size,
+  subset,
+  index,
+} = require('mathjs')
+
 const getGravity = () => {
   return 32.174 //ft/s^2
 }
@@ -131,9 +143,8 @@ const getGMatrix = (resistances, flows) => {
   for (let i = 0; i < flows.length; i += 1) {
     const GRow = []
     for (let j = 0; j < flows.length; j += 1) {
-      console.log(i, j)
       if (i === j) {
-        GRow.push(1 / (resistances[i] * flows[i]))
+        GRow.push(1 / (resistances[i] * Math.abs(flows[i])))
       } else {
         GRow.push(0)
       }
@@ -144,8 +155,8 @@ const getGMatrix = (resistances, flows) => {
 }
 
 const pipes = [
-  { id: '1,2,3,4', length: 2, diameter: 1, roughness: 0.1 },
-  { id: '1,2,3,5', length: 2, diameter: 1, roughness: 0.1 },
+  { id: '1,2,3,4', length: 10, diameter: 0.2, roughness: 0.1 },
+  { id: '1,2,3,5', length: 10, diameter: 0.2, roughness: 0.1 },
 ]
 
 const nodes = [
@@ -160,24 +171,67 @@ const A2 = [
   [0, 1],
 ]
 
-const runSimulation = (A1, A2, pipes, nodes) => {
+const getLargestChange = (oldMatrix, newMatrix) => {
+  const changes = subtract(oldMatrix, newMatrix).map(flow => Math.abs(flow))
+  console.log(subset(changes, index(0)))
+  return size(changes) > 1 ? Math.max(...changes) : subset(changes, index(0))
+}
+
+export const runSimulation = (A1, A2, pipes, nodes) => {
   const tolerance = 0.001
   let error = Infinity
 
   let flows = getInitialFlowVector(pipes)
-
+  const A1T = transpose(A1)
   const elevations = getElevations(nodes)
   const demands = getDemands(nodes)
-  const velocities = getVelocities(flows, pipes)
-  const frictionFactors = getFrictionFactors(velocities, pipes)
-  const pipeResistances = getPipeResistances(velocities, pipes)
-  const n = getFlowExponent()
-  const G = getGMatrix(pipeResistances, flows)
+  let H = zeros(nodes.filter(node => !node.fixed).length)._data
 
-  console.log('elevations', elevations)
-  console.log('demands', demands)
-  console.log('pipeResist', pipeResistances)
-  console.log('G', G)
+  let i = 0
+  while (error > 0.001) {
+    const velocities = getVelocities(flows, pipes)
+    const frictionFactors = getFrictionFactors(velocities, pipes)
+    const pipeResistances = getPipeResistances(velocities, pipes)
+    const n = getFlowExponent()
+    const G = getGMatrix(pipeResistances, flows)
+    console.log('Flows:', flows)
+    console.log('Velocities:', velocities)
+    console.log('Iteration:', i)
+    console.log('elevations', elevations)
+    console.log('demands', demands)
+    console.log('pipeResist', pipeResistances)
+    console.log('G', G)
+
+    const term1 = multiply(multiply(A1T, G), A1)
+
+    const lastTerm = subtract(
+      multiply(1 - n, flows),
+      multiply(multiply(G, A2), elevations),
+    )
+    const thirdTerm = multiply(A1T, lastTerm)
+    const rightTerm = add(multiply(-n, demands), thirdTerm)
+    const Hnew = multiply(inv(term1), rightTerm)
+
+    // Solve for Qnew
+    console.log('Hbefore', H)
+    const QrightTerm = multiply(
+      G,
+      add(multiply(A2, elevations), multiply(A1, H)),
+    )
+    const QleftTerm = multiply(n - 1, flows)
+    const Qnew = multiply(1 / n, add(QleftTerm, QrightTerm))
+
+    error = getLargestChange(H, Hnew)
+
+    console.log('Qold', flows)
+    console.log('QNEW', Qnew)
+
+    console.log('H', H)
+    H = Hnew
+    flows = Qnew
+
+    i += 1
+  }
+
+  return [H, flows]
 }
-
-runSimulation(A1, A2, pipes, nodes)
