@@ -37,6 +37,10 @@ const Node = props => {
   )
 }
 
+const pipeRedness = (value, maxValue) => {
+  return (255 * value) / maxValue
+}
+
 const Pipe = props => {
   const coords = props.coord.split(',')
   const x1 = coords[0]
@@ -44,14 +48,26 @@ const Pipe = props => {
   const x2 = coords[2]
   const y2 = coords[3]
 
+  const allPipes = Object.values(props.graph.pipes)
+  let flow = 0
+  for (let i = 0; i < allPipes.length; i += 1) {
+    if (allPipes[i].id === props.id) {
+      flow = Math.abs(props.flowResults[i])
+    }
+  }
+  const maxFlow = Math.max(...props.flowResults.map(flow => Math.abs(flow)))
+  const red = pipeRedness(flow, maxFlow) ? pipeRedness(flow, maxFlow) : 0
+  console.log('maxflow', maxFlow)
+  console.log('flow', flow)
+
   return (
     <line
       x1={x1}
       y1={y1}
       x2={x2}
       y2={y2}
-      onClick={e => props.onClickPipe(props.id)}
-      style={{ stroke: '#4A4A4A', strokeWidth: '10px' }}
+      onClick={e => props.onClickPipe(props.coord)}
+      style={{ stroke: `rgb(${red},20,20)`, strokeWidth: '10px' }}
     />
   )
 }
@@ -223,13 +239,15 @@ function App() {
   const [graph, setGraph] = useState({ nodes: {}, pipes: {} })
   const [pipeInProgress, setPipeInProgress] = useState(false)
   const [showInfo, setShowInfo] = useState({ type: null, id: null })
+  const [flowResults, setFlowResults] = useState([])
 
   const handleSimulate = () => {
     const A1 = getNodeMatrix(graph, false)
     const A2 = getNodeMatrix(graph, true)
     const pipes = Object.values(graph.pipes)
     const nodes = Object.values(graph.nodes)
-    console.log('RESULTS', runSimulation(A1, A2, pipes, nodes))
+    const [H, Q] = runSimulation(A1, A2, pipes, nodes)
+    setFlowResults(Q)
   }
 
   const handleChangePipe = (pipeId, attributes) => {
@@ -339,9 +357,11 @@ function App() {
             return (
               <Pipe
                 coord={coord}
-                key={coord}
-                id={coord}
+                key={graph.pipes[coord].id}
+                id={graph.pipes[coord].id}
                 onClickPipe={onClickPipe}
+                graph={graph}
+                flowResults={flowResults}
               ></Pipe>
             )
           })}
