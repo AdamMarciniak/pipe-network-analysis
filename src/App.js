@@ -128,10 +128,22 @@ const PipeInfo = props => {
 
 const NodeInfo = props => {
   const [elevation, setElevation] = useState(props.node.elevation)
+  const [demand, setDemand] = useState(props.node.demand)
+  const [fixed, setFixed] = useState(props.node.fixed)
 
   const handleSetElevation = e => {
     const value = e.target.value
     setElevation(value)
+  }
+
+  const handleSetDemand = e => {
+    const value = e.target.value
+    setDemand(value)
+  }
+
+  const handleSetFixed = e => {
+    const value = e.target.value
+    setFixed(value)
   }
 
   const handleSubmitElevation = () => {
@@ -142,13 +154,40 @@ const NodeInfo = props => {
     }
   }
 
+  const handleSubmitDemand = () => {
+    const value = Number(demand)
+    if (!isNaN(value)) {
+      const newAttributes = { ...props.node, demand: value }
+      props.handleChangeNode(props.node.id, newAttributes)
+    }
+  }
+
+  const handleSubmitFixed = () => {
+    let value = false
+    if (Number(fixed) === 0) {
+      value = false
+    } else {
+      value = true
+    }
+    if (!isNaN(value)) {
+      const newAttributes = { ...props.node, fixed: value }
+      props.handleChangeNode(props.node.id, newAttributes)
+    }
+  }
+
   return (
     <div>
       <h2>{`Node Id: ${props.node.id}`}</h2>
       <label>
+        Type:
+        <input type="text" value={fixed} onChange={handleSetFixed} />
+        <button onClick={handleSubmitFixed}>Submit</button>
         Elevation:
         <input type="text" value={elevation} onChange={handleSetElevation} />
         <button onClick={handleSubmitElevation}>Submit</button>
+        Demand:
+        <input type="text" value={demand} onChange={handleSetDemand} />
+        <button onClick={handleSubmitDemand}>Submit</button>
       </label>
     </div>
   )
@@ -185,6 +224,14 @@ function App() {
   const [pipeInProgress, setPipeInProgress] = useState(false)
   const [showInfo, setShowInfo] = useState({ type: null, id: null })
 
+  const handleSimulate = () => {
+    const A1 = getNodeMatrix(graph, false)
+    const A2 = getNodeMatrix(graph, true)
+    const pipes = Object.values(graph.pipes)
+    const nodes = Object.values(graph.nodes)
+    console.log('RESULTS', runSimulation(A1, A2, pipes, nodes))
+  }
+
   const handleChangePipe = (pipeId, attributes) => {
     const pipeKey = Object.keys(graph.pipes).filter(
       key => graph.pipes[key].id === pipeId,
@@ -216,6 +263,7 @@ function App() {
           addNode(graph, [x, y], {
             id: `${Math.random()}`,
             fixed: false,
+            demand: 0,
             elevation: 0,
           }),
         )
@@ -264,7 +312,7 @@ function App() {
     <div className="App">
       <div className="toolbar">
         <button className="toolbarButton">+</button>
-        <button className="toolbarButton">
+        <button className="toolbarButton" onClick={handleSimulate}>
           <svg width="11" height="13" viewBox="0 0 11 13" fill="none">
             <path
               d="M10.4972 6.50046L0.337715 12.3661L0.337715 0.634859L10.4972 6.50046Z"

@@ -103,7 +103,7 @@ const getElevations = nodes => {
 const getDemands = nodes => {
   const demands = []
   nodes
-    .filter(node => node.demand !== 0)
+    .filter(node => !node.fixed)
     .forEach(node => {
       demands.push(node.demand)
     })
