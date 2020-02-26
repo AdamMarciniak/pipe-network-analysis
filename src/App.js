@@ -79,31 +79,6 @@ function round(number, increment) {
 const PipeInfo = props => {
   const [length, setLength] = useState(props.pipe.length)
   const [diameter, setDiameter] = useState(props.pipe.diameter)
-  const [roughness, setRoughness] = useState(props.pipe.roughness)
-  console.log('PIPE', props.pipe)
-  const handleSubmitLength = () => {
-    const value = Number(length)
-    if (!isNaN(value)) {
-      const newAttributes = { ...props.pipe, length: value }
-      props.handleChangePipe(props.pipe.id, newAttributes)
-    }
-  }
-
-  const handleSubmitDiameter = () => {
-    const value = Number(diameter)
-    if (!isNaN(value)) {
-      const newAttributes = { ...props.pipe, diameter: value }
-      props.handleChangePipe(props.pipe.id, newAttributes)
-    }
-  }
-
-  const handleSubmitRoughness = () => {
-    const value = Number(roughness)
-    if (!isNaN(value)) {
-      const newAttributes = { ...props.pipe, roughness: value }
-      props.handleChangePipe(props.pipe.id, newAttributes)
-    }
-  }
 
   const handleSetLength = e => {
     const value = e.target.value
@@ -115,29 +90,29 @@ const PipeInfo = props => {
     setDiameter(value)
   }
 
-  const handleSetRoughness = e => {
-    const value = e.target.value
-    setRoughness(value)
+  const handleSubmit = () => {
+    const len = Number(length)
+    const dia = Number(diameter)
+    if (!isNaN(len) && !isNaN(dia)) {
+      if (len !== 0 && dia !== 0) {
+        const newAttributes = { ...props.pipe, length: len, diameter: dia }
+        props.handleChangePipe(props.pipe.id, newAttributes)
+      }
+    }
   }
 
   return (
     <div>
       <h2>{`Pipe Id: ${props.pipe.id}`}</h2>
-      <label>
-        Length:
+      <div>
+        <label>Length:</label>
         <input type="text" value={length} onChange={handleSetLength} />
-        <button onClick={handleSubmitLength}>Submit</button>
-      </label>
-      <label>
-        Diameter:
+      </div>
+      <div>
+        <label>Diameter:</label>
         <input type="text" value={diameter} onChange={handleSetDiameter} />
-        <button onClick={handleSubmitDiameter}>Submit</button>
-      </label>
-      <label>
-        Roughness:
-        <input type="text" value={roughness} onChange={handleSetRoughness} />
-        <button onClick={handleSubmitRoughness}>Submit</button>
-      </label>
+      </div>
+      <button onClick={handleSubmit}>Submit</button>
     </div>
   )
 }
@@ -145,7 +120,7 @@ const PipeInfo = props => {
 const NodeInfo = props => {
   const [elevation, setElevation] = useState(props.node.elevation)
   const [demand, setDemand] = useState(props.node.demand)
-  const [fixed, setFixed] = useState(props.node.fixed)
+  const [isFixed, setIsFixed] = useState(props.node.fixed)
 
   const handleSetElevation = e => {
     const value = e.target.value
@@ -158,35 +133,20 @@ const NodeInfo = props => {
   }
 
   const handleSetFixed = e => {
-    const value = e.target.value
-    setFixed(value)
+    const value = e.target.checked
+    setIsFixed(value)
   }
 
-  const handleSubmitElevation = () => {
-    const value = Number(elevation)
-    if (!isNaN(value)) {
-      const newAttributes = { ...props.node, elevation: value }
-      props.handleChangeNode(props.node.id, newAttributes)
-    }
-  }
-
-  const handleSubmitDemand = () => {
-    const value = Number(demand)
-    if (!isNaN(value)) {
-      const newAttributes = { ...props.node, demand: value }
-      props.handleChangeNode(props.node.id, newAttributes)
-    }
-  }
-
-  const handleSubmitFixed = () => {
-    let value = false
-    if (Number(fixed) === 0) {
-      value = false
-    } else {
-      value = true
-    }
-    if (!isNaN(value)) {
-      const newAttributes = { ...props.node, fixed: value }
+  const handleSubmit = () => {
+    const elev = Number(elevation)
+    const dem = Number(demand)
+    if (!isNaN(elev) && !isNaN(dem)) {
+      const newAttributes = {
+        ...props.node,
+        elevation: elev,
+        demand: dem,
+        fixed: isFixed,
+      }
       props.handleChangeNode(props.node.id, newAttributes)
     }
   }
@@ -194,17 +154,24 @@ const NodeInfo = props => {
   return (
     <div>
       <h2>{`Node Id: ${props.node.id}`}</h2>
-      <label>
-        Type:
-        <input type="text" value={fixed} onChange={handleSetFixed} />
-        <button onClick={handleSubmitFixed}>Submit</button>
-        Elevation:
+      <div>
+        <label>Source/Reservoir?:</label>
+        <input
+          type="checkbox"
+          value={isFixed}
+          checked={isFixed}
+          onChange={handleSetFixed}
+        />
+      </div>
+      <div>
+        <label>Elevation: </label>
         <input type="text" value={elevation} onChange={handleSetElevation} />
-        <button onClick={handleSubmitElevation}>Submit</button>
-        Demand:
+      </div>
+      <div>
+        <label>Demand:</label>
         <input type="text" value={demand} onChange={handleSetDemand} />
-        <button onClick={handleSubmitDemand}>Submit</button>
-      </label>
+      </div>
+      <button onClick={handleSubmit}>Submit</button>
     </div>
   )
 }
@@ -262,6 +229,7 @@ function App() {
     const nodeKey = Object.keys(graph.nodes).filter(
       key => graph.nodes[key].id === nodeId,
     )[0]
+    console.log('NODEKEY', attributes)
     console.log(Object.keys(graph.nodes), nodeId)
     setGraph(changeNode(graph, nodeKey, attributes))
   }
@@ -329,7 +297,6 @@ function App() {
   return (
     <div className="App">
       <div className="toolbar">
-        <button className="toolbarButton">+</button>
         <button className="toolbarButton" onClick={handleSimulate}>
           <svg width="11" height="13" viewBox="0 0 11 13" fill="none">
             <path
@@ -338,6 +305,26 @@ function App() {
             />
           </svg>
         </button>
+        <div
+          style={{
+            fontSize: '11px',
+            marginLeft: '20px',
+            width: '85%',
+            height: '80%',
+            overflowWrap: 'break-word',
+          }}
+        >
+          Welcome! Shift+click to create a new node. Alt+click between two nodes
+          to create a new pipe. Click a node or pipe to access it's properties
+          on the right. Click the submit button after changing properties. You
+          must have a at least one Source node and a one reservoir node in your
+          network. Liquids will flow from higher elevation to lower. When you
+          make a source node and reservoir node, one of them has to be higher
+          than the other. The higher one will be denoted as the source. The
+          lower as the reservoir. When ready to simulate, click the play button
+          on the top left. Pipes will turn more red as a percentage of max flow
+          from all pipes.
+        </div>
       </div>
 
       <div className="workspace" ref={workspaceRef} onClick={handleAddNode}>
@@ -370,6 +357,7 @@ function App() {
       </div>
 
       <div className="infoPanel">
+        <h1>Properties</h1>
         <InfoPanel
           handleChangePipe={handleChangePipe}
           handleChangeNode={handleChangeNode}
