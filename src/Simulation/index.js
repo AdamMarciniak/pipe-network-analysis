@@ -154,31 +154,12 @@ const getGMatrix = (resistances, flows) => {
   return GMatrix
 }
 
-const pipes = [
-  { id: '1,2,3,4', length: 10, diameter: 0.2, roughness: 0.1 },
-  { id: '1,2,3,5', length: 10, diameter: 0.2, roughness: 0.1 },
-]
-
-const nodes = [
-  { id: '1,2', fixed: false, elevation: 0, demand: 1 },
-  { id: '3,4', fixed: true, elevation: 5, demand: 0 },
-  { id: '3,5', fixed: true, elevation: 0, demand: 0 },
-]
-
-const A1 = [[-1], [-1]]
-const A2 = [
-  [1, 0],
-  [0, 1],
-]
-
 const getLargestChange = (oldMatrix, newMatrix) => {
   const changes = subtract(oldMatrix, newMatrix).map(flow => Math.abs(flow))
-  console.log(subset(changes, index(0)))
   return size(changes) > 1 ? Math.max(...changes) : subset(changes, index(0))
 }
 
-export const runSimulation = (A1, A2, pipes, nodes) => {
-  const tolerance = 0.001
+export const runSimulation = (A1, A2, pipes, nodes, tolerance) => {
   let error = Infinity
 
   let flows = getInitialFlowVector(pipes)
@@ -188,19 +169,19 @@ export const runSimulation = (A1, A2, pipes, nodes) => {
   let H = zeros(nodes.filter(node => !node.fixed).length)._data
 
   let i = 0
-  while (error > 0.001) {
+  while (error > tolerance) {
     const velocities = getVelocities(flows, pipes)
     const frictionFactors = getFrictionFactors(velocities, pipes)
     const pipeResistances = getPipeResistances(velocities, pipes)
     const n = getFlowExponent()
     const G = getGMatrix(pipeResistances, flows)
     console.log('Flows:', flows)
-    console.log('Velocities:', velocities)
-    console.log('Iteration:', i)
-    console.log('elevations', elevations)
-    console.log('demands', demands)
-    console.log('pipeResist', pipeResistances)
-    console.log('G', G)
+    // console.log('Velocities:', velocities)
+    // console.log('Iteration:', i)
+    // console.log('elevations', elevations)
+    // console.log('demands', demands)
+    // console.log('pipeResist', pipeResistances)
+    // console.log('G', G)
 
     const term1 = multiply(multiply(A1T, G), A1)
 
@@ -213,7 +194,6 @@ export const runSimulation = (A1, A2, pipes, nodes) => {
     const Hnew = multiply(inv(term1), rightTerm)
 
     // Solve for Qnew
-    console.log('Hbefore', H)
     const QrightTerm = multiply(
       G,
       add(multiply(A2, elevations), multiply(A1, H)),
@@ -223,10 +203,6 @@ export const runSimulation = (A1, A2, pipes, nodes) => {
 
     error = getLargestChange(H, Hnew)
 
-    console.log('Qold', flows)
-    console.log('QNEW', Qnew)
-
-    console.log('H', H)
     H = Hnew
     flows = Qnew
 

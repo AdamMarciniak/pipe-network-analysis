@@ -49,7 +49,7 @@ const Pipe = props => {
   const y2 = coords[3]
 
   const allPipes = Object.values(props.graph.pipes)
-  let flow = 0
+  let flow = ''
   for (let i = 0; i < allPipes.length; i += 1) {
     if (allPipes[i].id === props.id) {
       flow = Math.abs(props.flowResults[i])
@@ -57,8 +57,6 @@ const Pipe = props => {
   }
   const maxFlow = Math.max(...props.flowResults.map(flow => Math.abs(flow)))
   const red = pipeRedness(flow, maxFlow) ? pipeRedness(flow, maxFlow) : 0
-  console.log('maxflow', maxFlow)
-  console.log('flow', flow)
 
   return (
     <line
@@ -213,7 +211,7 @@ function App() {
     const A2 = getNodeMatrix(graph, true)
     const pipes = Object.values(graph.pipes)
     const nodes = Object.values(graph.nodes)
-    const [H, Q] = runSimulation(A1, A2, pipes, nodes)
+    const [H, Q] = runSimulation(A1, A2, pipes, nodes, 0.001)
     setFlowResults(Q)
   }
 
@@ -221,7 +219,6 @@ function App() {
     const pipeKey = Object.keys(graph.pipes).filter(
       key => graph.pipes[key].id === pipeId,
     )[0]
-    console.log(Object.keys(graph.pipes), pipeId)
     setGraph(changePipe(graph, pipeKey, attributes))
   }
 
@@ -229,8 +226,6 @@ function App() {
     const nodeKey = Object.keys(graph.nodes).filter(
       key => graph.nodes[key].id === nodeId,
     )[0]
-    console.log('NODEKEY', attributes)
-    console.log(Object.keys(graph.nodes), nodeId)
     setGraph(changeNode(graph, nodeKey, attributes))
   }
 
@@ -261,15 +256,10 @@ function App() {
     const x = data.x + 10
     const y = data.y + 10
     const newId = `${x},${y}`
-    console.log('DRAG', oldId, newId)
-    console.log('newGraph', dragNode(graph, oldId, newId))
     setGraph(dragNode(graph, oldId, newId))
   }
 
-  useEffect(() => {
-    console.log(getNodeMatrix(graph, false))
-    console.log(graph)
-  }, [graph])
+  useEffect(() => {}, [graph])
 
   const handlePipe = (e, id) => {
     if (e.altKey) {
